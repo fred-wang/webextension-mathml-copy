@@ -63,10 +63,10 @@ browser.contextMenus.onClicked.addListener(function(info, tab) {
     // editors or HTML5 applications (Thunderbird, MDN, etc).
     copyToClipboard(tab.id, gMathMLData.source,
                     ["text/plain", "text/html"]);
-  } else {
-    // Copy annotation as text.
+  } else if (gMathMLData.annotations) {
     let match = info.menuItemId.match(/annotation_(\d+)/);
     if (match) {
+      // Copy annotation as text.
       let annotation = gMathMLData.annotations[parseInt(match[1])];
       copyToClipboard(tab.id, annotation.source, ["text/plain"]);
     }
