@@ -6,8 +6,6 @@
 
 const MathMLNameSpace = "http://www.w3.org/1998/Math/MathML";
 
-let port = browser.runtime.connect();
-
 function getAnnotations(aSemantics) {
   let annotations = [];
   let serializer = new XMLSerializer();
@@ -54,8 +52,13 @@ function getMathMLSourceAndAnnotations(aNode)
   return result;
 }
 
-document.addEventListener("contextmenu", function(event) {
-  // Retrieve the <math> source and annotations and send that information to the
-  // background script.
-  port.postMessage(getMathMLSourceAndAnnotations(event.target));
-}, true);
+let port = browser.runtime.connect({name: "get-mathml-data"});
+let listener = function() {
+  document.addEventListener("contextmenu", function(event) {
+    // Retrieve the <math> source and annotations and send that information to
+    // the background script.
+    port.postMessage(getMathMLSourceAndAnnotations(event.target));
+  }, true);
+  port.onMessage.removeListener(listener);
+}
+port.onMessage.addListener(listener);

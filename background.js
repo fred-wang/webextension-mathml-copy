@@ -10,29 +10,10 @@ function copyToClipboard(tabID, source, mimeTypes) {
     return;
   }
 
-  // The background pages cannot directly write to the clipboard, so defer the
-  // task to a content script.
-  const copyCode = "copyToClipboard(" +
-    JSON.stringify(source) + "," +
-    JSON.stringify(mimeTypes) + ");";
-
-  browser.tabs.executeScript(tabID, {
-    code: "typeof copyToClipboard === 'function';"
-  }).then(function(results) {
-    // The content script's last expression will be true if the function
-    // has been defined. If this is not the case, then we need to run
-    // clipboard-helper.js to define function copyToClipboard.
-    if (!results || results[0] !== true) {
-      return browser.tabs.executeScript(tabID, {
-        file: "content-scripts/clipboard-helper.js"
-      });
-    }
-  }).then(function() {
-    return browser.tabs.executeScript(tabID, {
-      code: copyCode
-    });
-  }).catch(function(error) {
-    console.error("Failed to copy text: " + error);
+  // Connect to the content script and send it the data to copy.
+  let port = browser.tabs.connect(tabID);
+  port.onMessage.addListener(function() {
+    port.postMessage({source: source, mimeTypes: mimeTypes});
   });
 }
 
@@ -107,8 +88,12 @@ function updateAnnotationMenuItems(aOldAnnotations, aNewAnnotations) {
 // FIXME: Can we improve the retrieval
 // See https://github.com/fred-wang/webextension-mathml-copy/issues/2
 browser.runtime.onConnect.addListener((aPort) => {
-  aPort.onMessage.addListener((aMathMLData) => {
-    updateAnnotationMenuItems(gMathMLData.annotations, aMathMLData.annotations);
-    gMathMLData = aMathMLData;
-  });
+  if (aPort.name == "get-mathml-data") {
+    aPort.onMessage.addListener((aMathMLData) => {
+      updateAnnotationMenuItems(gMathMLData.annotations,
+                                aMathMLData.annotations);
+      gMathMLData = aMathMLData;
+    });
+    aPort.postMessage("Listening for updates of MathML data...");
+  }
 });

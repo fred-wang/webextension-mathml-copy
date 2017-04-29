@@ -21,3 +21,11 @@ function copyToClipboard(text, mimeTypes) {
   document.addEventListener("copy", oncopy, true);
   document.execCommand("copy");
 }
+
+browser.runtime.onConnect.addListener((aPort) => {
+  aPort.onMessage.addListener((aClipboardData) => {
+    aPort.disconnect();
+    copyToClipboard(aClipboardData.source, aClipboardData.mimeTypes);
+  });
+  aPort.postMessage("Send me the data to copy!");
+});
