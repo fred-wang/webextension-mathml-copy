@@ -1,0 +1,8 @@
+{
+    "copy_mathml": {
+        "message": "Copia formula MathML "
+    },
+    "copy_annotation": {
+        "message": "Copia annotazione"
+    }
+}
